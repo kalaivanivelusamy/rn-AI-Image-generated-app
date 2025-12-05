@@ -26,7 +26,29 @@ const aspectRatioData = [
 ];
 
 
-
+const examplePrompts = [
+  "A jogger running fast, happy expression, airbrush caricature",
+  "A futuristic hopeful busy city, purple and green color scheme",
+  "llustration of dinosaurs drawn by a child, the illustrations are cute and heartwarming",
+  "A futuristic cityscape with flying cars and futuristic buildings",
+  "A vintage red convertible driving along a winding coastal road at sunset, with the ocean waves crashing against rugged cliffs and seagulls soaring in the sky",
+  "An old steampunk airship floating through golden clouds at sunset",
+  "A future Mars colony with glass domes and gardens against red mountains",
+  "Generate an image featuring celestial bodies in the vastness of space. Include planets, stars, and galaxies to create a captivating cosmic scene",
+  "A dragon sleeping on gold coins in a crystal cave",
+  "An underwater kingdom with merpeople and glowing coral buildings",
+  "A floating island with waterfalls pouring into clouds below",
+  "A Young Woman Sitting on a Wooden Bench in a Sunlit Park, with Flowers in the Background",
+  "A robot painting in a sunny studio with art supplies around it",
+  "A magical library with floating glowing books and spiral staircases",
+  "Generate an image capturing the moon landing, featuring a lone astronaut standing on the lunar surface. Show the Apollo 11’s Eagle module sitting nearby",
+  "A cosmic beach with glowing sand and an aurora in the night sky",
+  "A medieval marketplace with colorful tents and street performers",
+  "A cyberpunk city with neon signs and flying cars at night",
+  "A peaceful bamboo forest with a hidden ancient temple",
+  "A giant turtle carrying a village on its back in the ocean",
+  "Futuristic Flying Car Soaring Above a Sprawling Cityscape",
+];
 
 export default function Index() {
 
@@ -34,6 +56,17 @@ export default function Index() {
   const [isFocus, setIsFocus] = useState(false);
   const [aspectRatio, setAspectRatio] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [prompt, setPrompt] = useState("");
+
+
+  const generatePrompt = () => {
+    const prompt = examplePrompts[Math.floor(Math.random() * examplePrompts.length)];
+    setPrompt(prompt);
+  }
+
+  const generateImage = () => {
+      console.log(prompt + aspectRatio)
+  }
 
   return (
     <>
@@ -46,8 +79,12 @@ export default function Index() {
             placeholder="Describe your imagination in detail"
             placeholderTextColor={COLORS.textDark}
             numberOfLines={3}
-            multiline={true}></TextInput>
-          <TouchableOpacity style={styles.ideaButton} onPress={() => { }}>
+            multiline={true}
+            value={prompt}
+            onChangeText={(text) => setPrompt(text)}
+          >
+          </TextInput>
+          <TouchableOpacity style={styles.ideaButton} onPress={() => { generatePrompt() }}>
             <FontAwesome name="lightbulb-o" size={25} color={COLORS.black} />
           </TouchableOpacity>
         </View>
@@ -89,12 +126,12 @@ export default function Index() {
             setIsFocus(false);
           }}
         />
-        <TouchableOpacity style={styles.generateButton} onPress={() => { }}>
+        <TouchableOpacity style={styles.generateButton} onPress={() => { generateImage()}}>
           <Text style={styles.generateButtonText}>Generate Image</Text>
         </TouchableOpacity>
 
         {isLoading &&
-          <View style={[styles.imageContainer, {justifyContent:"center", alignItems:"center"}]}>
+          <View style={[styles.imageContainer, { justifyContent: "center", alignItems: "center" }]}>
             {/* Generated image will be displayed here */}
             <ActivityIndicator size={"large"}> </ActivityIndicator>
           </View>
