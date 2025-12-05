@@ -6,6 +6,11 @@ import { Dropdown } from 'react-native-element-dropdown';
 import { AntDesign } from '@expo/vector-icons';
 import { useState } from 'react'
 import { getImageDimensions } from "@/utils/helper";
+import moment from "moment";
+import * as FileSystem from "expo-file-system/legacy";
+import * as MediaLibrary from 'expo-media-library';
+import * as Sharing from 'expo-sharing';
+
 const data = [
   { label: 'Item 1', value: '1' },
   { label: 'Item 2', value: '2' },
@@ -63,7 +68,7 @@ export default function Index() {
   const [aspectRatio, setAspectRatio] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [prompt, setPrompt] = useState("");
-  const [imageURL, setImageURL] = useState(null);
+  const [imageURL, setImageURL] = useState("");
 
   const generatePrompt = () => {
     const prompt = examplePrompts[Math.floor(Math.random() * examplePrompts.length)];
@@ -76,7 +81,7 @@ export default function Index() {
     const model_url = `https://router.huggingface.co/hf-inference/models/${models}`;
     const { width, height } = getImageDimensions(aspectRatio);
 
-    const API_KEY = 'API_KEY'//;
+    const API_KEY = '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';
     try {
       const response = await fetch(model_url, {
         headers: {
@@ -111,6 +116,63 @@ export default function Index() {
       console.log("Error generating image: ", error);
     }
   }
+
+//Download image`
+const handleDownload = async () => {
+  console.log("image data: ", imageURL);
+
+  // Convert data URL → pure base64
+  const base64data = imageURL.replace(/^data:image\/\w+;base64,/, "");
+  console.log("base64 image data: ", base64data);
+
+  const date = moment().format("YYYYMMDD_HHmmss");
+  const fileUri = FileSystem.documentDirectory + `image_${date}.jpg`;
+
+  try {
+    // 1️⃣ Write Base64 data to file
+    await FileSystem.writeAsStringAsync(
+      fileUri,
+      base64data,
+      { encoding: FileSystem.EncodingType.Base64 }
+    );
+
+    // 2️⃣ Request permission
+    const { status } = await MediaLibrary.requestPermissionsAsync();
+    if (status !== "granted") {
+      alert("Please grant gallery permissions!");
+      return;
+    }
+
+    // 3️⃣ Save to gallery
+    await MediaLibrary.saveToLibraryAsync(fileUri);
+
+    alert("Image downloaded to gallery!");
+    console.log("Saved to:", fileUri);
+
+  } catch (error) {
+    console.log("Error downloading image: ", error);
+  }
+}
+
+// Share image
+
+const handleShare = async () => {
+    const base64data = imageURL.split('data:image/jpeg;base64,')[1];
+  const date = moment().format('YYYYMMDD_HHmmss');
+
+  try {
+    const fileName = FileSystem.documentDirectory + `image_${date}.jpg`;
+    await FileSystem.writeAsStringAsync(fileName, base64data, { encoding: FileSystem.EncodingType.Base64,});
+    await Sharing.shareAsync(fileName);
+    alert('Image shared!');
+   
+  }
+  catch (error) {
+    console.log("Error sharing image: ", error);
+  }
+
+
+}
 
   return (
     <>
@@ -177,7 +239,7 @@ export default function Index() {
         {isLoading &&
           <View style={[styles.imageContainer, { justifyContent: "center", alignItems: "center" }]}>
             {/* Generated image will be displayed here */}
-            <ActivityIndicator size={"large"}> </ActivityIndicator>
+            <ActivityIndicator size={"large"}></ActivityIndicator>
           </View>
         }
         {imageURL && (
@@ -188,10 +250,10 @@ export default function Index() {
           {imageURL && <Image source={{ uri: imageURL }} style={styles.image} />}
         </View>
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.downloadButton} onPress={() => { }}>
+            <TouchableOpacity style={styles.downloadButton} onPress={() => handleDownload()}>
               <FontAwesome name="download" size={30} color={COLORS.textLight} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.downloadButton} onPress={() => { }}>
+            <TouchableOpacity style={styles.downloadButton} onPress={() => handleShare()}>
               <FontAwesome name="share" size={30} color={COLORS.textLight} />
             </TouchableOpacity>
           </View>
@@ -201,6 +263,8 @@ export default function Index() {
     </>
   );
 }
+
+
 
 
 const windowWidth = Dimensions.get('window').width;
