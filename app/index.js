@@ -5,7 +5,7 @@ import { FontAwesome } from "@expo/vector-icons";
 import { Dropdown } from 'react-native-element-dropdown';
 import { AntDesign } from '@expo/vector-icons';
 import { useState } from 'react'
-
+import { getImageDimensions } from "@/utils/helper";
 const data = [
   { label: 'Item 1', value: '1' },
   { label: 'Item 2', value: '2' },
@@ -25,6 +25,12 @@ const aspectRatioData = [
   { label: '2:3', value: '2:3' },
 ];
 
+const modelData = [
+  { label: 'flux1', value: 'black-forest-labs/FLUX.1-dev' },
+  { label: 'Stable Diffusion 3.5L', value: 'stabilityai/stable-diffusion-3.5-large' },
+  { label: 'Stable Diffusion XL', value: 'stabilityai/stable-diffusion-xl-base-1.0' },
+  { label: 'Stable Diffusion v1.5', value: 'stable-diffusion-v1-5/stable-diffusion-v1-5' },
+];
 
 const examplePrompts = [
   "A jogger running fast, happy expression, airbrush caricature",
@@ -52,20 +58,58 @@ const examplePrompts = [
 
 export default function Index() {
 
-  const [value, setValue] = useState(null);
+  const [models, setModels] = useState(null);
   const [isFocus, setIsFocus] = useState(false);
   const [aspectRatio, setAspectRatio] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [prompt, setPrompt] = useState("");
-
+  const [imageURL, setImageURL] = useState(null);
 
   const generatePrompt = () => {
     const prompt = examplePrompts[Math.floor(Math.random() * examplePrompts.length)];
     setPrompt(prompt);
   }
 
-  const generateImage = () => {
-      console.log(prompt + aspectRatio)
+  const generateImage = async () => {
+
+    setIsLoading(true);
+    const model_url = `https://router.huggingface.co/hf-inference/models/${models}`;
+    const { width, height } = getImageDimensions(aspectRatio);
+
+    const API_KEY = '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';
+    try {
+      const response = await fetch(model_url, {
+        headers: {
+          Authorization: `Bearer ${API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+        body: JSON.stringify({
+          inputs: prompt,
+          parameters: {
+            width: width,
+            height: height
+          }
+        }),
+      });
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const blob = await response.blob();
+      console.log("Image generated successfully: ", blob);
+
+      const fileReaderInstance = new FileReader();
+      fileReaderInstance.readAsDataURL(blob);
+      fileReaderInstance.onload = () => {
+      const base64data = fileReaderInstance.result;
+      setImageURL(base64data);
+      console.log("Image URL: ", base64data);
+      }
+      setIsLoading(false);
+    }
+    catch (error) {
+      console.log("Error generating image: ", error);
+    }
   }
 
   return (
@@ -94,16 +138,16 @@ export default function Index() {
           style={[styles.dropdown, isFocus && { borderColor: 'blue' }]}
           placeholderStyle={styles.placeholderStyle}
           selectedTextStyle={styles.selectedTextStyle}
-          data={data}
+          data={modelData}
           maxHeight={300}
           labelField="label"
           valueField="value"
           placeholder={!isFocus ? 'Select item' : '...'}
-          value={value}
+          value={models}
           onFocus={() => setIsFocus(true)}
           onBlur={() => setIsFocus(false)}
           onChange={item => {
-            setValue(item.value);
+            setModels(item.value);
             setIsFocus(false);
           }}
         />
@@ -126,7 +170,7 @@ export default function Index() {
             setIsFocus(false);
           }}
         />
-        <TouchableOpacity style={styles.generateButton} onPress={() => { generateImage()}}>
+        <TouchableOpacity style={styles.generateButton} onPress={() => { generateImage() }}>
           <Text style={styles.generateButtonText}>Generate Image</Text>
         </TouchableOpacity>
 
@@ -136,18 +180,23 @@ export default function Index() {
             <ActivityIndicator size={"large"}> </ActivityIndicator>
           </View>
         }
-        <View style={styles.imageContainer}>
+        {imageURL && (
+          <>
+          <View style={styles.imageContainer}>
           {/* Generated image will be displayed here */}
-          <Image source={require('@/sample.jpg')} style={styles.image} />
+          {/* <Image source={require('@/sample.jpg')} style={styles.image} /> */}
+          {imageURL && <Image source={{ uri: imageURL }} style={styles.image} />}
         </View>
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.downloadButton} onPress={() => { }}>
-            <FontAwesome name="download" size={30} color={COLORS.textLight} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.downloadButton} onPress={() => { }}>
-            <FontAwesome name="share" size={30} color={COLORS.textLight} />
-          </TouchableOpacity>
-        </View>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.downloadButton} onPress={() => { }}>
+              <FontAwesome name="download" size={30} color={COLORS.textLight} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.downloadButton} onPress={() => { }}>
+              <FontAwesome name="share" size={30} color={COLORS.textLight} />
+            </TouchableOpacity>
+          </View>
+          </>
+          )}
       </View>
     </>
   );
