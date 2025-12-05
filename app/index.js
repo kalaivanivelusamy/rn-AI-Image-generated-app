@@ -76,7 +76,7 @@ export default function Index() {
     const model_url = `https://router.huggingface.co/hf-inference/models/${models}`;
     const { width, height } = getImageDimensions(aspectRatio);
 
-    const API_KEY = 'API_KEY'//'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';
+    const API_KEY = 'API_KEY'//;
     try {
       const response = await fetch(model_url, {
         headers: {
